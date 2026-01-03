@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>神級拼字卡 V4.0 (極速版)</title>
+    <title>神級拼字卡 V4.1 (AI卡通繪圖版)</title>
     <style>
         :root {
             --primary: #6C5CE7;
@@ -58,10 +58,10 @@
             border-bottom: 6px solid #b2bec3;
         }
 
-        /* 圖片優化 */
+        /* 圖片區域優化 (AI 版本) */
         .img-container {
             width: 100%;
-            height: 220px;
+            height: 250px; /* 稍微調高一點 */
             background-color: #f1f2f6;
             border-radius: 15px;
             margin-bottom: 15px;
@@ -70,14 +70,34 @@
             justify-content: center;
             overflow: hidden;
             border: 2px solid #eee;
+            position: relative;
         }
         .img-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: opacity 0.3s;
+            transition: opacity 0.5s;
         }
-        .img-loading { color: #aaa; font-size: 14px; }
+        .img-loading {
+            position: absolute;
+            color: #888;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* 簡單的轉圈動畫 */
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 雙重顯示模式 */
         .word-display-area { margin: 20px 0; }
@@ -184,7 +204,7 @@
 <body>
 
     <div class="header">
-        <h2>🦉 極速拼字 V4.0</h2>
+        <h2>🎨 極速拼字 V4.1 (AI繪圖)</h2>
         <div class="score-box">分數: <span id="score">0</span></div>
     </div>
 
@@ -197,8 +217,11 @@
         <div class="card">
             
             <div class="img-container" id="img-area">
-                <span class="img-loading">載入圖片中...</span>
-                <img id="word-img" src="" onerror="this.style.display='none'; this.previousElementSibling.innerText='(無圖片)'">
+                <div class="img-loading" id="img-loading-txt">
+                    <div class="loading-spinner"></div>
+                    AI 機器人繪圖中...
+                </div>
+                <img id="word-img" src="" style="display:none; opacity: 0;">
             </div>
 
             <div id="study-content">
@@ -233,16 +256,15 @@
     <div class="settings-box">
         <h3 onclick="toggleSettings()" style="cursor:pointer; margin:0;">⚙️ 設定單字 (點擊展開)</h3>
         <div id="settings-panel" style="display:none; margin-top:15px;">
-            <p style="font-size:14px; margin-bottom:5px;"><b>輸入方式：</b><br>每行一個英文單字。<br>如果單字在常見字庫內，系統會自動翻譯。<br>如果沒有，請自己加上中文 (例如: <code>Giraffe 長頸鹿</code>)</p>
-            <textarea id="bulk-input" placeholder="Apple&#10;Banana&#10;Elephant&#10;Computer 電腦"></textarea>
-            <div class="note">* 圖片使用 LoremFlickr 快速圖庫，若不需要圖片可留空關閉網路。</div>
+            <p style="font-size:14px; margin-bottom:5px;"><b>輸入方式：</b><br>每行一個英文單字。<br>系統會自動翻譯常見字，並由 AI 生成卡通圖。<br>如需自訂中文: <code>單字 中文解釋</code></p>
+            <textarea id="bulk-input" placeholder="Apple&#10;Happy bird 快樂的小鳥&#10;Elephant&#10;Computer 電腦"></textarea>
+            <div class="note">* 圖片由 AI 即時生成，需要等待幾秒鐘。</div>
             <button class="btn btn-speak" style="width:100%; margin-top:10px;" onclick="saveWords()">💾 儲存設定</button>
         </div>
     </div>
 
 <script>
-    // --- 內建簡易字典 (解決無法自動翻譯的問題) ---
-    // 這裡包含了常見的小學單字，如果家長輸入這些字，程式會自動填入中文
+    // --- 內建簡易字典 ---
     const miniDict = {
         "apple": "蘋果", "banana": "香蕉", "cat": "貓", "dog": "狗", "elephant": "大象",
         "friend": "朋友", "girl": "女孩", "house": "房子", "ice": "冰", "juice": "果汁",
@@ -251,7 +273,8 @@
         "umbrella": "雨傘", "van": "客貨車", "water": "水", "xylophone": "木琴", "yellow": "黃色",
         "zebra": "斑馬", "book": "書", "computer": "電腦", "desk": "書桌", "eraser": "擦膠",
         "father": "爸爸", "mother": "媽媽", "brother": "兄弟", "sister": "姐妹", "happy": "快樂",
-        "sad": "傷心", "hungry": "肚餓", "beautiful": "美麗的", "delicious": "美味的"
+        "sad": "傷心", "hungry": "肚餓", "beautiful": "美麗的", "delicious": "美味的",
+        "astronaut": "太空人", "dinosaur": "恐龍"
     };
 
     let wordList = [];
@@ -261,15 +284,15 @@
     let hintUsed = false;
 
     // 預設範例
-    const defaultText = "Elephant\nBanana\nComputer\nBeautiful";
+    const defaultText = "Elephant\nAstronaut\nHappy dog 快樂的小狗\nBeautiful flower";
 
     window.onload = function() {
-        const stored = localStorage.getItem("spelling_v4_words");
+        const stored = localStorage.getItem("spelling_v4.1_words");
         document.getElementById("bulk-input").value = stored || defaultText;
         processInput(document.getElementById("bulk-input").value);
     };
 
-    // --- 核心：資料處理與自動翻譯 ---
+    // --- 核心：資料處理 ---
     function processInput(text) {
         const lines = text.split(/\n/);
         wordList = [];
@@ -277,28 +300,23 @@
         lines.forEach(line => {
             let raw = line.trim();
             if(!raw) return;
-
-            // 嘗試分離英文與中文
-            // Regex: 抓取開頭的英文字作為單字，剩下的作為解釋
-            // 允許格式: "Apple" 或 "Apple 蘋果" 或 "Apple, 蘋果"
+            // Regex: 抓取開頭的英文字作為單字(允許空格，例如 ice cream)，剩下的作為解釋
             let match = raw.match(/^([a-zA-Z\-\s]+)(.*)/);
             
             if (match) {
                 let en = match[1].trim();
                 let cn = match[2].trim().replace(/^[,，\s]+/, ""); // 去除開頭標點
 
-                // 如果家長沒輸入中文，嘗試查字典
                 if (!cn && miniDict[en.toLowerCase()]) {
                     cn = miniDict[en.toLowerCase()];
                 } else if (!cn) {
                     cn = "(請輸入中文)";
                 }
-
                 wordList.push({ en: en, cn: cn });
             }
         });
 
-        localStorage.setItem("spelling_v4_words", text);
+        localStorage.setItem("spelling_v4.1_words", text);
         currentIndex = 0;
         score = 0;
         document.getElementById("score").innerText = 0;
@@ -307,75 +325,82 @@
 
     function saveWords() {
         processInput(document.getElementById("bulk-input").value);
-        alert("已更新單字表！");
+        alert("已更新單字表！AI 準備繪圖中...");
         toggleSettings();
     }
 
     // --- 介面邏輯 ---
     function setMode(newMode) {
         mode = newMode;
-        
-        // 頁籤樣式
         document.getElementById("tab-study").className = mode === 'study' ? "tab tab-study active" : "tab tab-study";
         document.getElementById("tab-test").className = mode === 'test' ? "tab tab-test active" : "tab tab-test";
 
-        // 顯示內容
         if (mode === 'study') {
             document.getElementById("study-content").classList.remove("hidden");
             document.getElementById("test-content").classList.add("hidden");
-            document.getElementById("img-area").style.display = "flex"; // 顯示圖片
+            document.getElementById("img-area").style.display = "flex";
             document.getElementById("btn-hint").classList.add("hidden");
             document.getElementById("user-input").placeholder = "試打一次...";
         } else {
             document.getElementById("study-content").classList.add("hidden");
             document.getElementById("test-content").classList.remove("hidden");
-            document.getElementById("img-area").style.display = "none"; // 隱藏圖片
+            document.getElementById("img-area").style.display = "none";
             document.getElementById("btn-hint").classList.remove("hidden");
             document.getElementById("user-input").placeholder = "聽音默寫...";
             setTimeout(speakCurrent, 500);
         }
-
-        // 重置輸入與反饋
-        document.getElementById("user-input").value = "";
-        document.getElementById("feedback").innerText = "";
-        document.getElementById("user-input").style.borderColor = "#dfe6e9";
-        hintUsed = false;
-        document.getElementById("user-input").focus();
+        resetInput();
     }
 
     function loadWord() {
         if(wordList.length === 0) return;
         const current = wordList[currentIndex];
-        
-        // 1. 設定圖片 (使用 LoremFlickr，較快)
         const img = document.getElementById("word-img");
-        // 加入隨機參數避免緩存同一張圖
-        img.src = `https://loremflickr.com/320/240/${current.en.split(' ')[0]}?random=${currentIndex}`;
-        img.style.display = "block";
-        
-        // 2. 設定完整文字
-        document.getElementById("full-word-display").innerText = current.en;
+        const loadingTxt = document.getElementById("img-loading-txt");
 
-        // 3. 設定拆解文字 (每 3 個字母一組)
+        // 1. 設定圖片 (AI 生圖 - Pollinations)
+        // 重置狀態：顯示 Loading，隱藏圖片
+        img.style.display = "none";
+        img.style.opacity = 0;
+        loadingTxt.style.display = "flex";
+
+        // 準備 Prompt: 只取第一個單字，加入卡通風格關鍵字
+        const cleanWord = current.en.split(' ')[0].replace(/[^a-zA-Z]/g, "");
+        const prompt = encodeURIComponent(`cute cartoon illustration of ${cleanWord}, for kids, cheerful colors, simple background`);
+        // 使用隨機數確保每次都重新生成
+        const imgUrl = `https://image.pollinations.ai/prompt/${prompt}?width=400&height=300&nologo=true&seed=${Math.random()}`;
+
+        img.src = imgUrl;
+        
+        // 圖片載入成功後的處理
+        img.onload = function() {
+            loadingTxt.style.display = "none";
+            img.style.display = "block";
+            // 稍微延遲顯示以配合淡入效果
+            setTimeout(() => { img.style.opacity = 1; }, 50);
+        };
+        // 圖片載入失敗
+        img.onerror = function() {
+            loadingTxt.innerHTML = "⚠️<br>AI 繪圖失敗<br>(請檢查網路)";
+        };
+
+        // 2. 設定文字顯示
+        document.getElementById("full-word-display").innerText = current.en;
         const chunkRow = document.getElementById("chunk-display");
         chunkRow.innerHTML = "";
-        const chunks = chunkString(current.en, 3);
-        chunks.forEach(c => {
+        chunkString(current.en, 3).forEach(c => {
             let span = document.createElement("span");
             span.className = "chunk";
             span.innerText = c;
             chunkRow.appendChild(span);
         });
-
-        // 4. 設定中文
         document.getElementById("cn-display").innerText = current.cn;
 
-        setMode(mode); // 刷新當前模式顯示
+        setMode(mode);
     }
 
-    // 將字串拆解為小塊
     function chunkString(str, length) {
-        return str.match(new RegExp('.{1,' + length + '}', 'g'));
+        return str.match(new RegExp('.{1,' + length + '}', 'g')) || [str];
     }
 
     function checkAnswer() {
@@ -394,16 +419,17 @@
                 score += pts;
                 document.getElementById("score").innerText = score;
                 speak("Correct!");
-                setTimeout(nextWord, 1200);
+                setTimeout(nextWord, 1500);
             } else {
                 speak("Good job!");
-                // 溫習模式不自動跳轉，讓小朋友多看一眼
             }
         } else {
-            feedback.innerText = "❌ 再試一次";
+            feedback.innerText = "❌ 再試一次 Try again";
             feedback.style.color = "#d63031";
             input.style.borderColor = "#d63031";
             speak("Try again");
+            input.classList.add("shake");
+            setTimeout(()=>input.classList.remove("shake"), 500);
         }
     }
 
@@ -411,7 +437,7 @@
         hintUsed = true;
         const word = wordList[currentIndex].en;
         const hint = `${word[0]} ... ${word[word.length-1]}`;
-        document.getElementById("feedback").innerText = `提示: ${hint} (${word.length}個字母)`;
+        document.getElementById("feedback").innerText = `提示: ${hint} (共${word.length}個字母)`;
         document.getElementById("feedback").style.color = "#fab1a0";
         document.getElementById("user-input").focus();
     }
@@ -427,29 +453,37 @@
         loadWord();
     }
 
-    // --- 語音 ---
-    function speakCurrent() {
-        speak(wordList[currentIndex].en);
+    function resetInput() {
+        document.getElementById("user-input").value = "";
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("user-input").style.borderColor = "#dfe6e9";
+        hintUsed = false;
+        document.getElementById("user-input").focus();
     }
 
+    function speakCurrent() { speak(wordList[currentIndex].en); }
     function speak(txt) {
-        window.speechSynthesis.cancel(); // 停止上一個發音
+        window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'en-US';
-        u.rate = 0.9;
+        u.lang = 'en-US'; u.rate = 0.9;
         window.speechSynthesis.speak(u);
     }
-
     function toggleSettings() {
         const el = document.getElementById("settings-panel");
         el.style.display = el.style.display === "none" ? "block" : "none";
     }
-
-    // Enter 鍵支持
     document.getElementById("user-input").addEventListener("keypress", (e) => {
         if(e.key === "Enter") checkAnswer();
     });
-
 </script>
+<style>
+    /* 加入震動動畫 */
+    .shake { animation: shake 0.5s; }
+    @keyframes shake { 
+        0%, 100% { transform: translateX(0); } 
+        25% { transform: translateX(-10px); } 
+        75% { transform: translateX(10px); } 
+    }
+</style>
 </body>
 </html>
