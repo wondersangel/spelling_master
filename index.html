@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>神級拼字卡 V3.0 - AI配圖與評分版</title>
+    <title>神級拼字卡 V4.0 (極速版)</title>
     <style>
         :root {
             --primary: #6C5CE7;
-            --secondary: #00CEC9;
-            --accent: #FD79A8;
-            --bg: #DFE6E9;
-            --card-bg: #FFFFFF;
+            --secondary: #00b894;
+            --bg: #dfe6e9;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
         }
 
         body {
@@ -21,179 +21,201 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding-bottom: 50px;
         }
 
-        /* 頂部導航 */
-        .navbar {
+        /* 頂部 */
+        .header {
             width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: var(--primary);
             color: white;
-            padding: 15px 0;
+            padding: 15px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .score-board { font-size: 1.2rem; font-weight: bold; margin-left: 20px; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px;}
+        .header h2 { margin: 0; font-size: 1.2rem; }
+        .score-box { background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-weight: bold; }
 
-        /* 卡片容器 */
+        /* 卡片主體 */
         .container {
-            width: 90%;
-            max-width: 600px;
+            width: 95%;
+            max-width: 500px;
             margin-top: 20px;
+            padding-bottom: 50px;
         }
 
         .card {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             text-align: center;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
+            border-bottom: 6px solid #b2bec3;
         }
 
-        /* 圖片區域 */
-        .word-image {
-            width: 200px;
-            height: 200px;
-            object-fit: cover;
+        /* 圖片優化 */
+        .img-container {
+            width: 100%;
+            height: 220px;
+            background-color: #f1f2f6;
             border-radius: 15px;
-            margin: 10px auto;
-            border: 4px solid var(--secondary);
-            background-color: #eee;
-            display: block; /* 預設顯示 */
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid #eee;
         }
-        .word-image.hidden { display: none; }
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+        .img-loading { color: #aaa; font-size: 14px; }
 
-        /* 單字顯示區 (溫習模式) */
-        .chunk-container {
+        /* 雙重顯示模式 */
+        .word-display-area { margin: 20px 0; }
+
+        /* 1. 完整寫法 */
+        .full-word {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-family: 'Verdana', sans-serif;
+        }
+
+        /* 2. 拆解拼法 */
+        .chunk-row {
             display: flex;
             justify-content: center;
-            gap: 4px;
-            margin: 15px 0;
+            gap: 5px;
             flex-wrap: wrap;
         }
-        
         .chunk {
-            font-size: 42px;
-            font-weight: 800;
-            padding: 5px 10px;
-            border-radius: 12px;
+            font-size: 24px;
+            padding: 4px 12px;
+            border-radius: 10px;
             color: white;
-            text-shadow: 1px 1px 0px rgba(0,0,0,0.2);
+            font-weight: bold;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
             font-family: 'Comic Sans MS', sans-serif;
         }
-        /* 自動循環顏色 */
-        .chunk:nth-child(4n+1) { background-color: #FF7675; }
-        .chunk:nth-child(4n+2) { background-color: #74B9FF; }
-        .chunk:nth-child(4n+3) { background-color: #55EFC4; }
-        .chunk:nth-child(4n+4) { background-color: #a29bfe; }
+        .chunk:nth-child(4n+1) { background: #FF7675; }
+        .chunk:nth-child(4n+2) { background: #74B9FF; }
+        .chunk:nth-child(4n+3) { background: #55EFC4; }
+        .chunk:nth-child(4n+4) { background: #a29bfe; }
 
-        .chinese-meaning {
-            font-size: 24px;
+        .chinese-text {
+            font-size: 22px;
             color: #636e72;
-            margin-bottom: 20px;
+            margin-top: 10px;
             font-weight: bold;
         }
 
         /* 輸入框 */
         input[type="text"] {
-            font-size: 28px;
-            padding: 12px;
+            font-size: 26px;
+            padding: 10px;
             width: 80%;
             text-align: center;
-            border: 3px solid #b2bec3;
-            border-radius: 15px;
+            border: 3px solid #dfe6e9;
+            border-radius: 12px;
             outline: none;
-            margin-bottom: 10px;
-            background-color: #f8f9fa;
+            background: #f8f9fa;
         }
-        input:focus { border-color: var(--primary); background-color: #fff; }
+        input:focus { border-color: var(--primary); background: #fff; }
 
-        /* 按鈕樣式 */
+        /* 按鈕 */
+        .btn-group {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
         .btn {
             border: none;
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 10px 20px;
+            font-size: 16px;
             border-radius: 50px;
             cursor: pointer;
             color: white;
-            margin: 5px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-weight: bold;
             transition: transform 0.1s;
         }
         .btn:active { transform: scale(0.95); }
-
-        .btn-speak { background-color: var(--primary); }
-        .btn-check { background-color: var(--secondary); }
-        .btn-hint { background-color: #fab1a0; color: #333; font-size: 14px; }
-        .btn-next { background-color: #636e72; }
-
-        /* 模式切換標籤 */
-        .mode-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 14px;
-            color: white;
+        .btn-speak { background: var(--primary); }
+        .btn-check { background: var(--secondary); }
+        .btn-hint { background: #fab1a0; color: #333; }
+        .btn-next { background: #636e72; }
+        
+        /* 切換標籤 */
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .tab { 
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; opacity: 0.6; 
+            border: 2px solid transparent;
         }
-        .mode-study { background-color: #00b894; }
-        .mode-test { background-color: #d63031; }
+        .tab.active { opacity: 1; border-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .tab-study { background: #00b894; color: white; }
+        .tab-test { background: #d63031; color: white; }
 
-        /* 隱藏元素工具 */
         .hidden { display: none !important; }
+        #feedback { height: 30px; font-weight: bold; margin-top: 10px; font-size: 18px;}
 
-        /* 反饋訊息 */
-        #feedback { font-size: 20px; font-weight: bold; min-height: 30px; margin-top: 10px;}
-
-        /* 家長設定區 */
-        .settings {
-            width: 90%;
-            max-width: 600px;
-            margin: 30px auto;
-            border: 2px dashed #b2bec3;
-            padding: 20px;
-            border-radius: 15px;
-            background: #fff;
+        /* 設定區 */
+        .settings-box {
+            width: 90%; max-width: 500px; background: white; 
+            padding: 20px; border-radius: 15px; margin: 30px auto; 
+            border: 2px dashed #ccc;
         }
-        textarea { width: 100%; height: 120px; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;}
+        textarea { width: 100%; height: 120px; padding: 10px; font-size: 14px; border: 1px solid #ddd; }
+        .note { font-size: 12px; color: #888; margin-top: 5px; }
 
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <span>🏆 拼字大挑戰</span>
-        <span class="score-board">分數: <span id="score-val">0</span></span>
-    </div>
-
-    <div style="margin-top: 20px;">
-        <button class="btn" style="background:#00b894" onclick="switchMode('study')">📖 溫習模式 (Study)</button>
-        <button class="btn" style="background:#d63031" onclick="switchMode('test')">📝 測驗模式 (Test)</button>
+    <div class="header">
+        <h2>🦉 極速拼字 V4.0</h2>
+        <div class="score-box">分數: <span id="score">0</span></div>
     </div>
 
     <div class="container">
+        <div class="tabs">
+            <div class="tab tab-study active" id="tab-study" onclick="setMode('study')">📖 溫習 (Study)</div>
+            <div class="tab tab-test" id="tab-test" onclick="setMode('test')">📝 測驗 (Test)</div>
+        </div>
+
         <div class="card">
-            <span id="mode-badge" class="mode-badge mode-study">溫習中</span>
-
-            <img id="dynamic-image" class="word-image" src="" alt="Word Image">
-            <div id="image-placeholder" style="font-size:12px; color:#aaa; margin-bottom:10px;">(圖片由 AI 自動生成)</div>
-
-            <div id="study-area">
-                <div id="chunk-display" class="chunk-container"></div>
-                <div id="chinese-display" class="chinese-meaning"></div>
+            
+            <div class="img-container" id="img-area">
+                <span class="img-loading">載入圖片中...</span>
+                <img id="word-img" src="" onerror="this.style.display='none'; this.previousElementSibling.innerText='(無圖片)'">
             </div>
 
-            <div id="test-area" class="hidden">
-                <div style="font-size:60px; cursor:pointer; margin:20px;" onclick="speakCurrent()">🔊</div>
-                <p style="color:#666">點擊喇叭聽發音</p>
+            <div id="study-content">
+                <div class="word-display-area">
+                    <div class="full-word" id="full-word-display">Elephant</div>
+                    <div class="chunk-row" id="chunk-display">
+                        <span class="chunk">Ele</span>
+                        <span class="chunk">pha</span>
+                        <span class="chunk">nt</span>
+                    </div>
+                </div>
+                <div class="chinese-text" id="cn-display">大象</div>
+            </div>
+
+            <div id="test-content" class="hidden" style="margin: 30px 0;">
+                <div style="font-size: 60px; cursor: pointer; animation: pulse 2s infinite;" onclick="speakCurrent()">🔊</div>
+                <div style="color:#888; font-size:14px;">點擊聽發音</div>
             </div>
 
             <input type="text" id="user-input" placeholder="輸入單字..." autocomplete="off">
@@ -201,260 +223,233 @@
 
             <div class="btn-group">
                 <button class="btn btn-speak" onclick="speakCurrent()">🗣️ 發音</button>
-                <button class="btn btn-check" onclick="checkAnswer()">✅ 提交答案</button>
+                <button class="btn btn-check" onclick="checkAnswer()">✅ 提交</button>
                 <button class="btn btn-hint hidden" id="btn-hint" onclick="useHint()">💡 提示 (-3分)</button>
                 <button class="btn btn-next" onclick="nextWord()">➡️ 下一題</button>
             </div>
         </div>
     </div>
 
-    <div class="settings">
-        <h3 onclick="toggleSettings()" style="cursor:pointer">⚙️ 家長設定 / 輸入單字 (點擊展開)</h3>
-        <div id="settings-panel" style="display:none">
-            <p>請輸入：<b>英文單字 中文解釋</b> (中間用空格或逗號隔開)<br>一行一個。</p>
-            <textarea id="bulk-input" placeholder="Elephant 大象&#10;Computer 電腦&#10;Delicious 美味的"></textarea>
-            <button class="btn btn-speak" style="width:100%; margin-top:10px;" onclick="saveWords()">💾 儲存並更新</button>
+    <div class="settings-box">
+        <h3 onclick="toggleSettings()" style="cursor:pointer; margin:0;">⚙️ 設定單字 (點擊展開)</h3>
+        <div id="settings-panel" style="display:none; margin-top:15px;">
+            <p style="font-size:14px; margin-bottom:5px;"><b>輸入方式：</b><br>每行一個英文單字。<br>如果單字在常見字庫內，系統會自動翻譯。<br>如果沒有，請自己加上中文 (例如: <code>Giraffe 長頸鹿</code>)</p>
+            <textarea id="bulk-input" placeholder="Apple&#10;Banana&#10;Elephant&#10;Computer 電腦"></textarea>
+            <div class="note">* 圖片使用 LoremFlickr 快速圖庫，若不需要圖片可留空關閉網路。</div>
+            <button class="btn btn-speak" style="width:100%; margin-top:10px;" onclick="saveWords()">💾 儲存設定</button>
         </div>
     </div>
 
 <script>
-    // --- 資料與狀態 ---
-    let words = [];
-    let currentIndex = 0;
-    let currentMode = 'study'; // 'study' or 'test'
-    let score = 0;
-    let hintUsed = false;
-    
-    // 預設資料
-    const defaultRaw = "Elephant 大象\nBanana 香蕉\nUmbrella 雨傘\nHappiness 快樂";
-
-    // --- 初始化 ---
-    window.onload = function() {
-        const stored = localStorage.getItem("spelling_v3_words");
-        const raw = stored ? stored : defaultRaw;
-        document.getElementById("bulk-input").value = raw;
-        parseWords(raw);
-        loadWord();
+    // --- 內建簡易字典 (解決無法自動翻譯的問題) ---
+    // 這裡包含了常見的小學單字，如果家長輸入這些字，程式會自動填入中文
+    const miniDict = {
+        "apple": "蘋果", "banana": "香蕉", "cat": "貓", "dog": "狗", "elephant": "大象",
+        "friend": "朋友", "girl": "女孩", "house": "房子", "ice": "冰", "juice": "果汁",
+        "kite": "風箏", "lion": "獅子", "monkey": "猴子", "nose": "鼻子", "orange": "橙",
+        "pig": "豬", "queen": "女王", "rabbit": "兔子", "school": "學校", "teacher": "老師",
+        "umbrella": "雨傘", "van": "客貨車", "water": "水", "xylophone": "木琴", "yellow": "黃色",
+        "zebra": "斑馬", "book": "書", "computer": "電腦", "desk": "書桌", "eraser": "擦膠",
+        "father": "爸爸", "mother": "媽媽", "brother": "兄弟", "sister": "姐妹", "happy": "快樂",
+        "sad": "傷心", "hungry": "肚餓", "beautiful": "美麗的", "delicious": "美味的"
     };
 
-    // --- 核心功能 1: 解析輸入 (英文 + 中文) ---
-    function parseWords(text) {
+    let wordList = [];
+    let currentIndex = 0;
+    let mode = 'study'; 
+    let score = 0;
+    let hintUsed = false;
+
+    // 預設範例
+    const defaultText = "Elephant\nBanana\nComputer\nBeautiful";
+
+    window.onload = function() {
+        const stored = localStorage.getItem("spelling_v4_words");
+        document.getElementById("bulk-input").value = stored || defaultText;
+        processInput(document.getElementById("bulk-input").value);
+    };
+
+    // --- 核心：資料處理與自動翻譯 ---
+    function processInput(text) {
         const lines = text.split(/\n/);
-        words = [];
+        wordList = [];
+        
         lines.forEach(line => {
-            line = line.trim();
-            if(!line) return;
+            let raw = line.trim();
+            if(!raw) return;
+
+            // 嘗試分離英文與中文
+            // Regex: 抓取開頭的英文字作為單字，剩下的作為解釋
+            // 允許格式: "Apple" 或 "Apple 蘋果" 或 "Apple, 蘋果"
+            let match = raw.match(/^([a-zA-Z\-\s]+)(.*)/);
             
-            // 嘗試分割英文和中文
-            // 假設第一個空格或逗號分開
-            let parts = line.split(/[\s,，]+/); 
-            if(parts.length >= 2) {
-                const en = parts[0];
-                const cn = parts.slice(1).join(" "); // 剩下的都是中文
-                words.push({ en: en, cn: cn });
-            } else {
-                words.push({ en: parts[0], cn: "(未提供中文)" });
+            if (match) {
+                let en = match[1].trim();
+                let cn = match[2].trim().replace(/^[,，\s]+/, ""); // 去除開頭標點
+
+                // 如果家長沒輸入中文，嘗試查字典
+                if (!cn && miniDict[en.toLowerCase()]) {
+                    cn = miniDict[en.toLowerCase()];
+                } else if (!cn) {
+                    cn = "(請輸入中文)";
+                }
+
+                wordList.push({ en: en, cn: cn });
             }
         });
-        localStorage.setItem("spelling_v3_words", text);
+
+        localStorage.setItem("spelling_v4_words", text);
+        currentIndex = 0;
+        score = 0;
+        document.getElementById("score").innerText = 0;
+        loadWord();
     }
 
     function saveWords() {
-        parseWords(document.getElementById("bulk-input").value);
-        currentIndex = 0;
-        score = 0;
-        updateScore(0);
-        loadWord();
-        alert("單字表已更新！");
+        processInput(document.getElementById("bulk-input").value);
+        alert("已更新單字表！");
         toggleSettings();
     }
 
-    // --- 核心功能 2: 自動拆字 (Auto Chunking) ---
-    function generateChunks(word) {
-        // 簡單邏輯：每 3 個字母切一段，如果最後剩 1 個，併入上一段
-        // 例如 Elephant -> Ele - pha - nt
-        const chunks = [];
-        const len = word.length;
-        let i = 0;
+    // --- 介面邏輯 ---
+    function setMode(newMode) {
+        mode = newMode;
         
-        while(i < len) {
-            let size = 3;
-            // 如果剩下 4 個字，拆成 2+2 會比較好看 (Optionally)
-            // 這裡維持簡單：剩下 1 個字時，併入前一個
-            if (len - i === 4) size = 2; // 優化結尾
-            
-            let chunk = word.substr(i, size);
-            chunks.push(chunk);
-            i += size;
-        }
-        return chunks;
-    }
+        // 頁籤樣式
+        document.getElementById("tab-study").className = mode === 'study' ? "tab tab-study active" : "tab tab-study";
+        document.getElementById("tab-test").className = mode === 'test' ? "tab tab-test active" : "tab tab-test";
 
-    // --- 流程控制 ---
-    function switchMode(mode) {
-        currentMode = mode;
-        const badge = document.getElementById("mode-badge");
-        
-        if(mode === 'study') {
-            badge.innerText = "溫習模式";
-            badge.className = "mode-badge mode-study";
-            document.getElementById("study-area").classList.remove("hidden");
-            document.getElementById("test-area").classList.add("hidden");
-            document.getElementById("dynamic-image").classList.remove("hidden"); // 顯示圖片
-            document.getElementById("image-placeholder").classList.remove("hidden");
-            document.getElementById("btn-hint").classList.add("hidden"); // 溫習不需要提示
-            document.getElementById("user-input").placeholder = "試著輸入練習...";
+        // 顯示內容
+        if (mode === 'study') {
+            document.getElementById("study-content").classList.remove("hidden");
+            document.getElementById("test-content").classList.add("hidden");
+            document.getElementById("img-area").style.display = "flex"; // 顯示圖片
+            document.getElementById("btn-hint").classList.add("hidden");
+            document.getElementById("user-input").placeholder = "試打一次...";
         } else {
-            badge.innerText = "測驗模式";
-            badge.className = "mode-badge mode-test";
-            document.getElementById("study-area").classList.add("hidden");
-            document.getElementById("test-area").classList.remove("hidden");
-            document.getElementById("dynamic-image").classList.add("hidden"); // 隱藏圖片
-            document.getElementById("image-placeholder").classList.add("hidden");
-            document.getElementById("btn-hint").classList.remove("hidden"); // 測驗可提示
-            document.getElementById("user-input").placeholder = "聽音輸入...";
-            
-            // 測驗開始時自動發音
+            document.getElementById("study-content").classList.add("hidden");
+            document.getElementById("test-content").classList.remove("hidden");
+            document.getElementById("img-area").style.display = "none"; // 隱藏圖片
+            document.getElementById("btn-hint").classList.remove("hidden");
+            document.getElementById("user-input").placeholder = "聽音默寫...";
             setTimeout(speakCurrent, 500);
         }
-        
-        // 重置狀態
+
+        // 重置輸入與反饋
         document.getElementById("user-input").value = "";
         document.getElementById("feedback").innerText = "";
+        document.getElementById("user-input").style.borderColor = "#dfe6e9";
         hintUsed = false;
         document.getElementById("user-input").focus();
     }
 
     function loadWord() {
-        if(words.length === 0) return;
-        const item = words[currentIndex];
+        if(wordList.length === 0) return;
+        const current = wordList[currentIndex];
         
-        // 1. 設定圖片 (使用 Pollinations AI)
-        // 格式: https://image.pollinations.ai/prompt/{keyword}
-        const cleanWord = item.en.replace(/[^a-zA-Z]/g, "");
-        const imgUrl = `https://image.pollinations.ai/prompt/cartoon ${cleanWord} illustration?width=400&height=400&nologo=true&seed=${Math.random()}`;
-        document.getElementById("dynamic-image").src = imgUrl;
+        // 1. 設定圖片 (使用 LoremFlickr，較快)
+        const img = document.getElementById("word-img");
+        // 加入隨機參數避免緩存同一張圖
+        img.src = `https://loremflickr.com/320/240/${current.en.split(' ')[0]}?random=${currentIndex}`;
+        img.style.display = "block";
+        
+        // 2. 設定完整文字
+        document.getElementById("full-word-display").innerText = current.en;
 
-        // 2. 設定拆字顯示 (Chunking)
-        const chunkDiv = document.getElementById("chunk-display");
-        chunkDiv.innerHTML = "";
-        const chunks = generateChunks(item.en);
+        // 3. 設定拆解文字 (每 3 個字母一組)
+        const chunkRow = document.getElementById("chunk-display");
+        chunkRow.innerHTML = "";
+        const chunks = chunkString(current.en, 3);
         chunks.forEach(c => {
-            const span = document.createElement("span");
+            let span = document.createElement("span");
             span.className = "chunk";
             span.innerText = c;
-            chunkDiv.appendChild(span);
+            chunkRow.appendChild(span);
         });
 
-        // 3. 設定中文
-        document.getElementById("chinese-display").innerText = item.cn;
+        // 4. 設定中文
+        document.getElementById("cn-display").innerText = current.cn;
 
-        // 4. 清理介面
-        document.getElementById("user-input").value = "";
-        document.getElementById("feedback").innerText = "";
-        document.getElementById("user-input").style.borderColor = "#b2bec3";
-        hintUsed = false;
+        setMode(mode); // 刷新當前模式顯示
+    }
 
-        // 保持當前模式
-        switchMode(currentMode);
+    // 將字串拆解為小塊
+    function chunkString(str, length) {
+        return str.match(new RegExp('.{1,' + length + '}', 'g'));
     }
 
     function checkAnswer() {
         const input = document.getElementById("user-input");
-        const userVal = input.value.trim().toLowerCase();
-        const correctVal = words[currentIndex].en.toLowerCase();
+        const val = input.value.trim().toLowerCase();
+        const correct = wordList[currentIndex].en.toLowerCase();
         const feedback = document.getElementById("feedback");
 
-        if (userVal === correctVal) {
-            // 答對
+        if (val === correct) {
             feedback.innerText = "🎉 答對了！ Correct!";
             feedback.style.color = "#00b894";
             input.style.borderColor = "#00b894";
             
-            // 計算分數 (只在測驗模式且未算過分時)
-            if (currentMode === 'test') {
-                let points = 10;
-                if (hintUsed) points = 5; // 用提示扣分
-                updateScore(points);
+            if(mode === 'test') {
+                let pts = hintUsed ? 5 : 10;
+                score += pts;
+                document.getElementById("score").innerText = score;
                 speak("Correct!");
-                // 自動下一題
-                setTimeout(nextWord, 1500);
+                setTimeout(nextWord, 1200);
             } else {
-                // 溫習模式不計分，只給鼓勵
                 speak("Good job!");
-                setTimeout(nextWord, 1000);
+                // 溫習模式不自動跳轉，讓小朋友多看一眼
             }
-
         } else {
-            // 答錯
-            feedback.innerText = "❌ 錯誤，再試一次";
+            feedback.innerText = "❌ 再試一次";
             feedback.style.color = "#d63031";
             input.style.borderColor = "#d63031";
             speak("Try again");
-            
-            // 震動效果
-            input.animate([
-                { transform: 'translateX(0)' },
-                { transform: 'translateX(-10px)' },
-                { transform: 'translateX(10px)' },
-                { transform: 'translateX(0)' }
-            ], { duration: 300 });
         }
     }
 
     function useHint() {
-        if (currentMode !== 'test') return;
         hintUsed = true;
-        const word = words[currentIndex].en;
-        // 提示顯示頭尾字母
-        const hintText = word[0] + " ... " + word[word.length-1];
-        document.getElementById("feedback").innerText = "提示: " + hintText;
+        const word = wordList[currentIndex].en;
+        const hint = `${word[0]} ... ${word[word.length-1]}`;
+        document.getElementById("feedback").innerText = `提示: ${hint} (${word.length}個字母)`;
         document.getElementById("feedback").style.color = "#fab1a0";
         document.getElementById("user-input").focus();
     }
 
     function nextWord() {
         currentIndex++;
-        if(currentIndex >= words.length) {
-            alert("恭喜！全部完成！總分：" + score);
+        if (currentIndex >= wordList.length) {
+            alert(`練習結束！總分: ${score}`);
             currentIndex = 0;
             score = 0;
-            updateScore(0);
+            document.getElementById("score").innerText = 0;
         }
         loadWord();
     }
 
-    function updateScore(points) {
-        if(points === 0) score = 0; // 重置
-        else score += points;
-        document.getElementById("score-val").innerText = score;
-    }
-
     // --- 語音 ---
     function speakCurrent() {
-        const word = words[currentIndex].en;
-        speak(word);
+        speak(wordList[currentIndex].en);
     }
-    
-    function speak(text) {
-        const synth = window.speechSynthesis;
-        if (synth.speaking) return;
-        const u = new SpeechSynthesisUtterance(text);
+
+    function speak(txt) {
+        window.speechSynthesis.cancel(); // 停止上一個發音
+        const u = new SpeechSynthesisUtterance(txt);
         u.lang = 'en-US';
-        synth.speak(u);
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
     }
 
     function toggleSettings() {
-        const p = document.getElementById("settings-panel");
-        p.style.display = p.style.display === "none" ? "block" : "none";
+        const el = document.getElementById("settings-panel");
+        el.style.display = el.style.display === "none" ? "block" : "none";
     }
-    
-    // Enter 鍵提交
-    document.getElementById("user-input").addEventListener("keypress", function(e){
+
+    // Enter 鍵支持
+    document.getElementById("user-input").addEventListener("keypress", (e) => {
         if(e.key === "Enter") checkAnswer();
     });
 
 </script>
-
 </body>
 </html>
